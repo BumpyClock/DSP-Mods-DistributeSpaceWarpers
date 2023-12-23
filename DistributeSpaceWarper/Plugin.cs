@@ -26,7 +26,9 @@ namespace DistributeSpaceWarper
             _logger = base.Logger;
             _logger.LogInfo("Loaded!");
 
+#if DEBUG
             Debugger.Break();
+#endif
         }
     }
 }
