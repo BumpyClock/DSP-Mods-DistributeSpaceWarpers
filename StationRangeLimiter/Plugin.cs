@@ -9,7 +9,7 @@ namespace StationRangeLimiter
     public class Plugin : BaseUnityPlugin
     {
         private static ManualLogSource _logger;
-        private const string PluginGuid = "ShadowAngel.DSP.StationRangeLimiter";
+        private const string PluginGuid = "JClark.DSP.StationRangeLimiter";
         private const string PluginName = "Station Range Limiter";
         private const string PluginVersion = "1.0.4.0";
 
