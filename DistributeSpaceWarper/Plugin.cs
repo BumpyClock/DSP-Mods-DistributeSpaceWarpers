@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
+using System.Diagnostics;
 
 namespace DistributeSpaceWarper
 {
@@ -24,6 +25,8 @@ namespace DistributeSpaceWarper
         {
             _logger = base.Logger;
             _logger.LogInfo("Loaded!");
+
+            Debugger.Break();
         }
     }
 }
