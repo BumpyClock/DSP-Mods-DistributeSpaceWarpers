@@ -79,114 +79,122 @@ namespace DistributeSpaceWarper
             
             for (int j = 1; j < __instance.stationCursor; j++)
             {
-                if (__instance.stationPool[j] != null && __instance.stationPool[j].id == j)
+                try
                 {
-                    StationComponent stationComponent = __instance.stationPool[j];
-                    if (stationComponent.isCollector == true || stationComponent.isStellar == false)
+                    if (__instance.stationPool[j] != null && __instance.stationPool[j].id == j)
                     {
-                        continue;
-                    }
-                    bool needRefreshTraffic = false;
-                    if (stationComponent.storage.Length < prefabDesc.stationMaxItemKinds + 1)
-                    {
-                        Debug.LogError(1);
-                        List<StationStore> storeCopy = new List<StationStore>(stationComponent.storage);
-                        storeCopy.Add(new StationStore());
-                        stationComponent.storage = storeCopy.ToArray();
-                        __instance.SetStationStorage(
-                            stationComponent.id, 
-                            warperSlotIndex, 
-                            warperId,
-                            defaultMaxValue,
-                            defaultLocalMode,
-                            defaultRemoteMode, 
-                            GameMain.mainPlayer);
-                    }
-                    if (stationComponent.storage[warperSlotIndex].itemId != warperId)
-                    {
-                        __instance.SetStationStorage(
-                            stationComponent.id, 
-                            warperSlotIndex, 
-                            warperId, 
-                            defaultMaxValue, 
-                            defaultLocalMode, 
-                            defaultRemoteMode, 
-                            GameMain.mainPlayer);
-                    }
-                    if (warpersRequiredToggleAutomation == true)
-                    {
-                        if (stationComponent.warperNecessary == true && stationComponent.storage[warperSlotIndex].localLogic != defaultLocalMode)
+                        StationComponent stationComponent = __instance.stationPool[j];
+                        if (stationComponent.isCollector == true || stationComponent.isStellar == false)
                         {
+                            continue;
+                        }
+                        bool needRefreshTraffic = false;
+                        if (stationComponent.storage.Length < prefabDesc.stationMaxItemKinds + 1)
+                        {
+                            ModDebug.Error(1);
+                            List<StationStore> storeCopy = new List<StationStore>(stationComponent.storage);
+                            storeCopy.Add(new StationStore());
+                            stationComponent.storage = storeCopy.ToArray();
                             __instance.SetStationStorage(
-                                stationComponent.id, 
-                                warperSlotIndex, 
+                                stationComponent.id,
+                                warperSlotIndex,
                                 warperId,
-                                defaultMaxValue, 
+                                defaultMaxValue,
                                 defaultLocalMode,
-                                stationComponent.storage[warperSlotIndex].remoteLogic, 
+                                defaultRemoteMode,
                                 GameMain.mainPlayer);
                         }
-                        else if (stationComponent.warperNecessary == false && stationComponent.storage[warperSlotIndex].localLogic != ELogisticStorage.Supply)
+                        if (stationComponent.storage[warperSlotIndex].itemId != warperId)
                         {
                             __instance.SetStationStorage(
                                 stationComponent.id,
-                                warperSlotIndex, 
-                                warperId, 
-                                defaultMaxValue, 
-                                ELogisticStorage.Supply,
-                                stationComponent.storage[warperSlotIndex].remoteLogic, 
+                                warperSlotIndex,
+                                warperId,
+                                defaultMaxValue,
+                                defaultLocalMode,
+                                defaultRemoteMode,
                                 GameMain.mainPlayer);
                         }
+                        if (warpersRequiredToggleAutomation == true)
+                        {
+                            if (stationComponent.warperNecessary == true && stationComponent.storage[warperSlotIndex].localLogic != defaultLocalMode)
+                            {
+                                __instance.SetStationStorage(
+                                    stationComponent.id,
+                                    warperSlotIndex,
+                                    warperId,
+                                    defaultMaxValue,
+                                    defaultLocalMode,
+                                    stationComponent.storage[warperSlotIndex].remoteLogic,
+                                    GameMain.mainPlayer);
+                            }
+                            else if (stationComponent.warperNecessary == false && stationComponent.storage[warperSlotIndex].localLogic != ELogisticStorage.Supply)
+                            {
+                                __instance.SetStationStorage(
+                                    stationComponent.id,
+                                    warperSlotIndex,
+                                    warperId,
+                                    defaultMaxValue,
+                                    ELogisticStorage.Supply,
+                                    stationComponent.storage[warperSlotIndex].remoteLogic,
+                                    GameMain.mainPlayer);
+                            }
+                        }
+                        int manualWarperStoreIndex = Array.FindIndex(stationComponent.storage, store => store.itemId == warperId);
+                        if (manualWarperStoreIndex != -1
+                            && manualWarperStoreIndex != warperSlotIndex
+                            && stationComponent.storage[warperSlotIndex].count < stationComponent.storage[warperSlotIndex].max
+                            && stationComponent.storage[manualWarperStoreIndex].count > stationComponent.storage[manualWarperStoreIndex].max)
+                        {
+                            int warperOverflowInManualSlot = stationComponent.storage[manualWarperStoreIndex].count - stationComponent.storage[manualWarperStoreIndex].max;
+                            int warperNeedInAutomaticSlot = stationComponent.storage[warperSlotIndex].max - stationComponent.storage[warperSlotIndex].count;
+                            int transferAmount = Mathf.Min(warperNeedInAutomaticSlot, warperOverflowInManualSlot);
+                            stationComponent.storage[manualWarperStoreIndex].count -= transferAmount;
+                            stationComponent.storage[warperSlotIndex].count += transferAmount;
+                            stationComponent.storage[warperSlotIndex].localOrder = 0;
+                            stationComponent.storage[warperSlotIndex].remoteOrder = 0;
+                            needRefreshTraffic = true;
+                        }
+                        if (manualWarperStoreIndex != -1 &&
+                            (stationComponent.storage[warperSlotIndex].count == stationComponent.storage[warperSlotIndex].max
+                             && stationComponent.storage[warperSlotIndex].localLogic == ELogisticStorage.Demand && stationComponent.storage[warperSlotIndex].totalOrdered != 0
+                            ||
+                            stationComponent.storage[warperSlotIndex].count == 0 &&
+                            stationComponent.storage[warperSlotIndex].localLogic == ELogisticStorage.Supply && stationComponent.storage[warperSlotIndex].totalOrdered != 0))
+                        {
+                            int storageCount = stationComponent.storage[warperSlotIndex].count;
+                            stationComponent.storage[warperSlotIndex].count = 0;
+
+                            __instance.SetStationStorage(
+                                stationComponent.id,
+                                warperSlotIndex,
+                                0, defaultMaxValue,
+                                defaultLocalMode,
+                                defaultRemoteMode,
+                                GameMain.mainPlayer);
+
+                            __instance.SetStationStorage(
+                                stationComponent.id,
+                                warperSlotIndex,
+                                warperId, defaultMaxValue,
+                                defaultLocalMode, defaultRemoteMode,
+                                GameMain.mainPlayer);
+                            stationComponent.storage[warperSlotIndex].count = storageCount;
+                            needRefreshTraffic = true;
+                        }
+                        if (needRefreshTraffic)
+                        {
+                            stationComponent.UpdateNeeds();
+                            __instance.RefreshStationTraffic();
+                            __instance.RefreshDispenserTraffic();
+                            __instance.gameData.galacticTransport.RefreshTraffic(stationComponent.gid);
+                        }
                     }
-                    int manualWarperStoreIndex = Array.FindIndex(stationComponent.storage, store => store.itemId == warperId);
-                    if (manualWarperStoreIndex != -1 
-                        && manualWarperStoreIndex != warperSlotIndex
-                        && stationComponent.storage[warperSlotIndex].count < stationComponent.storage[warperSlotIndex].max 
-                        && stationComponent.storage[manualWarperStoreIndex].count > stationComponent.storage[manualWarperStoreIndex].max)
-                    {
-                        int warperOverflowInManualSlot = stationComponent.storage[manualWarperStoreIndex].count - stationComponent.storage[manualWarperStoreIndex].max;
-                        int warperNeedInAutomaticSlot = stationComponent.storage[warperSlotIndex].max - stationComponent.storage[warperSlotIndex].count;
-                        int transferAmount = Mathf.Min(warperNeedInAutomaticSlot, warperOverflowInManualSlot);
-                        stationComponent.storage[manualWarperStoreIndex].count -= transferAmount;
-                        stationComponent.storage[warperSlotIndex].count += transferAmount;
-                        stationComponent.storage[warperSlotIndex].localOrder = 0;
-                        stationComponent.storage[warperSlotIndex].remoteOrder = 0;
-                        needRefreshTraffic = true;
-                    }
-                    if (manualWarperStoreIndex != -1 &&
-                        (stationComponent.storage[warperSlotIndex].count == stationComponent.storage[warperSlotIndex].max 
-                         && stationComponent.storage[warperSlotIndex].localLogic == ELogisticStorage.Demand && stationComponent.storage[warperSlotIndex].totalOrdered != 0 
-                        || 
-                        stationComponent.storage[warperSlotIndex].count == 0 && 
-                        stationComponent.storage[warperSlotIndex].localLogic == ELogisticStorage.Supply && stationComponent.storage[warperSlotIndex].totalOrdered != 0))
-                    {
-                        int storageCount = stationComponent.storage[warperSlotIndex].count;
-                        stationComponent.storage[warperSlotIndex].count = 0;
-                        
-                        __instance.SetStationStorage(
-                            stationComponent.id, 
-                            warperSlotIndex, 
-                            0, defaultMaxValue, 
-                            defaultLocalMode, 
-                            defaultRemoteMode, 
-                            GameMain.mainPlayer);
-                        
-                        __instance.SetStationStorage(
-                            stationComponent.id, 
-                            warperSlotIndex, 
-                            warperId, defaultMaxValue,
-                            defaultLocalMode, defaultRemoteMode, 
-                            GameMain.mainPlayer);
-                        stationComponent.storage[warperSlotIndex].count = storageCount;
-                        needRefreshTraffic = true;
-                    }
-                    if (needRefreshTraffic)
-                    {
-                        stationComponent.UpdateNeeds();
-                        __instance.RefreshStationTraffic();
-                        __instance.RefreshDispenserTraffic();
-                        __instance.gameData.galacticTransport.RefreshTraffic(stationComponent.gid);        
-                    }
+
+                }
+                catch (Exception e)
+                {
+                    ModDebug.Error($"Error occurred :{e}");
                 }
             }
         }

@@ -35,7 +35,7 @@
                 "Default local logistics mode of the Warpers"
             );
 
-            General.WarperRemoteMode = config.Bind(GENERAL_SECTION, "WarperRemoteMode", ELogisticStorage.None,
+            General.WarperRemoteMode = config.Bind(GENERAL_SECTION, "WarperRemoteMode", ELogisticStorage.Demand,
                 "Default remote logistics mode of the Warpers"
             );
             

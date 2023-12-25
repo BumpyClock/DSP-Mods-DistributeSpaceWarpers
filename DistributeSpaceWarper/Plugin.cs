@@ -12,7 +12,7 @@ namespace DistributeSpaceWarper
         private static ManualLogSource _logger;
         private const string PluginGuid = "JClark.DSP.DistributeSpaceWarper";
         private const string PluginName = "Distribute Space Warper";
-        private const string PluginVersion = "1.0.11.0";
+        private const string PluginVersion = "1.0.12.0";
 
         public void Awake()
         {
@@ -25,6 +25,8 @@ namespace DistributeSpaceWarper
         {
             _logger = base.Logger;
             _logger.LogInfo("Loaded!");
+
+            ModDebug.SetLogger(_logger);
 
 #if DEBUG
             Debugger.Break();
