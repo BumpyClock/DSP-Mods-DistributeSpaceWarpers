@@ -1,0 +1,9 @@
+{
+    "name": "DistributeSpaceWarpers",
+    "version_number": "1.0.1",
+    "website_url": "https://github.com/BumpyClock/DSP-Mods-DistributeSpaceWarpers",
+    "description": "This mod will warp the warpers from a local warp supplier. Does not add an extra slot to ILS for better compatability with other mods",
+    "dependencies": [
+        "xiaoye97-BepInEx-5.4.5"
+    ]
+}

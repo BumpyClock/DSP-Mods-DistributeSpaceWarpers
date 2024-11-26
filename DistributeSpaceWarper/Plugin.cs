@@ -10,9 +10,9 @@ namespace DistributeSpaceWarper
     public class Plugin : BaseUnityPlugin
     {
         private static ManualLogSource _logger;
-        private const string PluginGuid = "JClark.DSP.DistributeSpaceWarper";
+        private const string PluginGuid = "BumpyClock.DSP.DistributeSpaceWarper";
         private const string PluginName = "Distribute Space Warper";
-        private const string PluginVersion = "1.0.12.0";
+        private const string PluginVersion = "1.0.1";
 
         public void Awake()
         {

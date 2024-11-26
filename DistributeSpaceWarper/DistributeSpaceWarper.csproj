@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <ProjectGuid>{DD23704E-3C0C-4D6B-8EB1-F847CFB2BC2D}</ProjectGuid>
+    <ProjectGuid>{5656ac09-2d15-4af2-8310-bb6c58eaed1b}</ProjectGuid>
     <RootNamespace>DistributeSpaceWarper</RootNamespace>
     <AssemblyName>DistributeSpaceWarper</AssemblyName>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -25,7 +25,6 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y /d  &quot;$(TargetDir)\*.dll&quot; &quot;C:\Users\Jimmie\AppData\Roaming\r2modmanPlus-local\DysonSphereProgram\profiles\DSP_Default_newgame\BepInEx\plugins\JClark-DistributeSpaceWarpers\&quot;&#xD;&#xA;&#xD;&#xA;" />
   </Target>
   <!--
   <PropertyGroup>

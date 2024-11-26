@@ -24,20 +24,32 @@ namespace DistributeSpaceWarper
             int warperId = ItemProto.kWarperId;
             int maxWarperCount = 50;
 
-            // Collect all stations on the planet
-            List<StationComponent> stations = new List<StationComponent>();
+            // Collect all stations on the planet without allocating new memory
+            StationComponent[] stationPool = __instance.stationPool;
+            List<StationComponent> stations = new List<StationComponent>(__instance.stationCursor);
             for (int j = 1; j < __instance.stationCursor; j++)
             {
-                StationComponent station = __instance.stationPool[j];
+                StationComponent station = stationPool[j];
                 if (station != null && station.id == j && !station.isCollector && station.isStellar)
                 {
                     stations.Add(station);
                 }
             }
 
-            // Identify supplier and receiver stations
-            var supplierStations = stations.Where(s => IsWarperSupplier(s, warperId)).ToList();
-            var receiverStations = stations.Where(s => NeedsWarpers(s, maxWarperCount)).ToList();
+            // Identify supplier and receiver stations without memory allocations
+            List<StationComponent> supplierStations = new List<StationComponent>();
+            List<StationComponent> receiverStations = new List<StationComponent>();
+            foreach (var station in stations)
+            {
+                if (IsWarperSupplier(station, warperId))
+                {
+                    supplierStations.Add(station);
+                }
+                else if (NeedsWarpers(station, maxWarperCount))
+                {
+                    receiverStations.Add(station);
+                }
+            }
 
             // Transfer warpers from suppliers to receivers
             foreach (var receiver in receiverStations)
