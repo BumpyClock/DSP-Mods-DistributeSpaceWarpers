@@ -9,6 +9,10 @@ namespace DistributeSpaceWarper
     static class Patch
     {
         private static bool ModDisabled => Config.Utility.DisableMod.Value == true || Config.Utility.UninstallMod.Value == true;
+        private static bool RemoteTransfer => Config.General.WarperRemoteMode.Value == true;
+        public static int WarperTickCount => Config.General.WarperTickCount.Value;
+        public static int WarperLocalTransportCost => Config.General.WarperLocalTransportCost.Value == true ? 1 : 0;
+        public static int WarperRemoteTransportCost => Config.General.WarperRemoteTransportCost.Value;
 
         [HarmonyPatch(typeof(PlanetTransport), "GameTick", typeof(long), typeof(bool), typeof(bool))]
         [HarmonyPostfix]
@@ -17,24 +21,25 @@ namespace DistributeSpaceWarper
             if (ModDisabled)
                 return;
 
-            // Run every 60 ticks to reduce performance impact
-            if (Time.frameCount % 60 != 0)
+            if (Time.frameCount % WarperTickCount != 0)
                 return;
 
             int warperId = ItemProto.kWarperId;
             int maxWarperCount = 50;
 
-            // Collect all stations on the planet without allocating new memory
+            // Collect all stations 
             StationComponent[] stationPool = __instance.stationPool;
             List<StationComponent> stations = new List<StationComponent>(__instance.stationCursor);
             for (int j = 1; j < __instance.stationCursor; j++)
             {
                 StationComponent station = stationPool[j];
-                if (station != null && station.id == j && !station.isCollector && station.isStellar)
+                if (station != null && station.id == j && !station.isCollector &&
+                    (station.isStellar || (RemoteTransfer && IsRemoteWarperSupplier(station, warperId))))
                 {
                     stations.Add(station);
                 }
             }
+
 
             // Identify supplier and receiver stations without memory allocations
             List<StationComponent> supplierStations = new List<StationComponent>();
@@ -54,6 +59,7 @@ namespace DistributeSpaceWarper
             // Transfer warpers from suppliers to receivers
             foreach (var receiver in receiverStations)
             {
+                
                 TransferWarpersToReceiver(__instance, receiver, supplierStations, warperId, maxWarperCount);
             }
         }
@@ -63,10 +69,15 @@ namespace DistributeSpaceWarper
             return station.warperCount > 0 && station.storage.Any(s => s.itemId == warperId && s.localLogic == ELogisticStorage.Supply);
         }
 
+        private static bool IsRemoteWarperSupplier(StationComponent station, int warperId)
+        {
+            return station.storage.Any(s => s.itemId == warperId && s.remoteLogic == ELogisticStorage.Supply);
+        }
+
+
         private static bool NeedsWarpers(StationComponent station, int maxWarperCount)
         {
-            // Station must be set to demand or none and have less than the max warper count
-            return station.warperCount < maxWarperCount;
+            return (station.warperCount < maxWarperCount && station.warperNecessary);
         }
 
         private static void TransferWarpersToReceiver(PlanetTransport planetTransport, StationComponent receiver, List<StationComponent> suppliers, int warperId, int maxWarperCount)
@@ -80,12 +91,20 @@ namespace DistributeSpaceWarper
             foreach (var supplier in suppliers)
             {
                 if (supplier.warperCount <= 0)
-                    continue; // Supplier has no warpers
+                    continue; 
 
-                int transferAmount = Mathf.Min(neededWarperCount, supplier.warperCount);
+                // Determine the transport cost
+                int transportCost = supplier.planetId == receiver.planetId ? WarperLocalTransportCost : WarperRemoteTransportCost;
+
+                // Calculate the actual transfer amount considering the transport cost
+                int transferableWarperCount = supplier.warperCount - transportCost;
+                int transferAmount = Mathf.Min(neededWarperCount, transferableWarperCount);
+
+                // Ensure the supplier's warper count does not fall below 0
+                transferAmount = Mathf.Min(transferAmount, supplier.warperCount - transportCost);
 
                 // Remove warpers from supplier
-                supplier.warperCount -= transferAmount;
+                supplier.warperCount -= transferAmount + transportCost;
 
                 // Add warpers to receiver
                 receiver.warperCount += transferAmount;
@@ -102,5 +121,6 @@ namespace DistributeSpaceWarper
                     break; // Receiver has received enough warpers
             }
         }
+
     }
 }
