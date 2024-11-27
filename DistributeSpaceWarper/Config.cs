@@ -10,9 +10,10 @@
         public static class General
         {
             public static ConfigEntry<bool> WarperRemoteMode;
+            public static ConfigEntry<bool> WarperTransportCost;
             public static ConfigEntry<int> WarperRemoteTransportCost;
             public static ConfigEntry<int> WarperTickCount;
-            public static ConfigEntry<bool> WarperLocalTransportCost;
+            public static ConfigEntry<int> WarperLocalTransportCost;
             public static ConfigEntry<bool> WarpersRequiredToggleAutomation;
         }
         
@@ -34,13 +35,17 @@
             General.WarperRemoteMode = config.Bind(GENERAL_SECTION, "WarperRemoteMode", false,
                 "By default only search local ILS/PLS for supplies. Enable this to get Warpers from different planets as well"
             );
-            
-            General.WarpersRequiredToggleAutomation =  config.Bind(GENERAL_SECTION, "WarpersRequiredToggleAutomation", true,
-                "If enabled, when `Warpers Required` toggle ticked on, this will setup warper slot to default local mode. " +
-                "When toggle is ticked off this will set wraper slot to local supply.");
 
-            General.WarperLocalTransportCost = config.Bind(GENERAL_SECTION, "WarperTransportCost", true,
+            General.WarperTransportCost = config.Bind(GENERAL_SECTION, "WarperTransportCost", true,
                 "If enabled, transporting Warpers costs 1 warper. Disable for moving Warpers at no costs.");
+
+            General.WarpersRequiredToggleAutomation =  config.Bind(GENERAL_SECTION, "WarpersRequiredToggleAutomation", true,
+                "If enabled, when `Warpers Required` toggle ticked on, this will auto fill the warper slot. " +
+                "When toggle is ticked off this will stop filling the wraper slot from suppliers");
+
+            General.WarperLocalTransportCost = config.Bind(GENERAL_SECTION, "WarperLocalTransportCost", 1,
+               new ConfigDescription( "If enabled, transporting Warpers costs 1 warper. Disable for moving Warpers at no costs.",
+               new AcceptableValueRange<int>(0,10), new { }));
             
             General.WarperRemoteTransportCost = config.Bind(GENERAL_SECTION, "WarperRemoteTransportCost", 2,
                 new ConfigDescription("Default cost of transporting Warpers from different planets. Note: Maximum of 10, defaults to 2",
