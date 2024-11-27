@@ -9,10 +9,11 @@
 
         public static class General
         {
-            public static ConfigEntry<ELogisticStorage> WarperLocalMode;
-            public static ConfigEntry<ELogisticStorage> WarperRemoteMode;
-            public static ConfigEntry<int> WarperMaxValue;
-            public static ConfigEntry<bool> ShowWarperSlot;
+            public static ConfigEntry<bool> WarperRemoteMode;
+            public static ConfigEntry<bool> WarperTransportCost;
+            public static ConfigEntry<int> WarperRemoteTransportCost;
+            public static ConfigEntry<int> WarperTickCount;
+            public static ConfigEntry<int> WarperLocalTransportCost;
             public static ConfigEntry<bool> WarpersRequiredToggleAutomation;
         }
         
@@ -27,22 +28,29 @@
             // General Config //
             ////////////////////
             
-            General.WarperMaxValue = config.Bind(GENERAL_SECTION, "WarperMaxValue", 100,
-                new ConfigDescription("Default number of items set for warper slot. Note: Should be in increments of 100. Otherwise may cause issues.",
-                    new AcceptableValueRange<int>(0, 10000), new { }));
-                
-            General.WarperLocalMode = config.Bind(GENERAL_SECTION, "WarperLocalMode", ELogisticStorage.Demand,
-                "Default local logistics mode of the Warpers"
+            General.WarperTickCount = config.Bind(GENERAL_SECTION, "WarperTickCount", 60,
+                new ConfigDescription("Default number of ticks before distributing warpers. Note: Maximum of 260, defaults to 60",
+                    new AcceptableValueRange<int>(0, 275), new { }));
+
+            General.WarperRemoteMode = config.Bind(GENERAL_SECTION, "WarperRemoteMode", false,
+                "By default only search local ILS/PLS for supplies. Enable this to get Warpers from different planets as well"
             );
 
-            General.WarperRemoteMode = config.Bind(GENERAL_SECTION, "WarperRemoteMode", ELogisticStorage.Demand,
-                "Default remote logistics mode of the Warpers"
-            );
-            
+            General.WarperTransportCost = config.Bind(GENERAL_SECTION, "WarperTransportCost", true,
+                "If enabled, transporting Warpers costs 1 warper. Disable for moving Warpers at no costs.");
+
             General.WarpersRequiredToggleAutomation =  config.Bind(GENERAL_SECTION, "WarpersRequiredToggleAutomation", true,
-                "If enabled, when `Warpers Required` toggle ticked on, this will setup warper slot to default local mode. " +
-                "When toggle is ticked off this will set wraper slot to local supply.");
+                "If enabled, when `Warpers Required` toggle ticked on, this will auto fill the warper slot. " +
+                "When toggle is ticked off this will stop filling the wraper slot from suppliers");
+
+            General.WarperLocalTransportCost = config.Bind(GENERAL_SECTION, "WarperLocalTransportCost", 1,
+               new ConfigDescription( "If enabled, transporting Warpers costs 1 warper. Disable for moving Warpers at no costs.",
+               new AcceptableValueRange<int>(0,10), new { }));
             
+            General.WarperRemoteTransportCost = config.Bind(GENERAL_SECTION, "WarperRemoteTransportCost", 2,
+                new ConfigDescription("Default cost of transporting Warpers from different planets. Note: Maximum of 10, defaults to 2",
+                    new AcceptableValueRange<int>(0, 10), new { }));
+
             ////////////////////
             // Utility Config //
             ////////////////////
