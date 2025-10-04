@@ -1,3 +1,5 @@
+v1.0.7
+- Updated for the new build
 v1.0.4
 - Fixed Remote logic so now warpers will be moved from remote ILS/PLS if local ILS/PLS does not have any warpers.
 - Small refactor to reduce code duplication.

@@ -12,7 +12,7 @@ namespace DistributeSpaceWarper
         private static ManualLogSource _logger;
         private const string PluginGuid = "BumpyClock.DSP.DistributeSpaceWarper";
         private const string PluginName = "Distribute Space Warper";
-        private const string PluginVersion = "1.0.4";
+        private const string PluginVersion = "1.0.7";
 
         public void Awake()
         {

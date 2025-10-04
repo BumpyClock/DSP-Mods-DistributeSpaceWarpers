@@ -2,6 +2,7 @@ using System;
 using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace DistributeSpaceWarper
@@ -16,83 +17,88 @@ namespace DistributeSpaceWarper
         public static int WarperLocalTransportCost => Config.General.WarperLocalTransportCost.Value;
         public static int WarperRemoteTransportCost => Config.General.WarperRemoteTransportCost.Value;
 
-        [HarmonyPatch(typeof(PlanetTransport), "GameTick", typeof(long), typeof(bool), typeof(bool))]
+        // Patch GalacticTransport.GameTick instead of PlanetTransport.GameTick
+        // This runs once per game tick and has access to all stations
+        [HarmonyPatch(typeof(GalacticTransport), "GameTick")]
         [HarmonyPostfix]
-        public static void PlanetTransport_GameTick_Postfix(PlanetTransport __instance)
+        public static void GalacticTransport_GameTick_Postfix(GalacticTransport __instance)
         {
             try
             {
                 if (ModDisabled)
                 {
-                    Debug.Log("Mod is disabled.");
                     return;
                 }
 
                 if (Time.frameCount % WarperTickCount != 0)
                 {
-                    Debug.Log("Skipping tick due to WarperTickCount.");
+                    return;
+                }
+
+                // Access GameData through GalacticTransport
+                if (__instance.gameData == null)
+                {
                     return;
                 }
 
                 int warperId = ItemProto.kWarperId;
                 int maxWarperCount = 50;
 
-                // Collect all stations from PlanetTransport and GalacticTransport
-                List<StationComponent> stations = CollectStations(__instance, warperId);
+                // Collect all stations from all planets and galactic transport
+                List<StationComponent> allStations = new List<StationComponent>();
+
+                // Iterate through all factory planets
+                foreach (var planetData in __instance.gameData.factories)
+                {
+                    if (planetData == null || planetData.transport == null)
+                        continue;
+
+                    PlanetTransport planetTransport = planetData.transport;
+                    for (int j = 1; j < planetTransport.stationCursor; j++)
+                    {
+                        StationComponent station = planetTransport.stationPool[j];
+                        if (station != null && station.id == j && !station.isCollector &&
+                            (station.isStellar || (RemoteTransfer && IsRemoteWarperSupplier(station, warperId)) ||
+                             station.storage.Any(s => s.itemId == warperId && (s.localLogic == ELogisticStorage.Supply || s.remoteLogic == ELogisticStorage.Supply))))
+                        {
+                            allStations.Add(station);
+                        }
+                    }
+                }
+
+                // Also add galactic transport stations if RemoteTransfer is enabled
+                if (RemoteTransfer)
+                {
+                    foreach (StationComponent station in __instance.stationPool)
+                    {
+                        if (station != null && !station.isCollector && station.isStellar &&
+                            station.storage.Any(s => s.itemId == warperId && s.remoteLogic == ELogisticStorage.Supply))
+                        {
+                            if (!allStations.Contains(station))
+                            {
+                                allStations.Add(station);
+                            }
+                        }
+                    }
+                }
 
                 // Identify supplier and receiver stations
                 List<StationComponent> supplierStations = new List<StationComponent>();
                 List<StationComponent> receiverStations = new List<StationComponent>();
-                IdentifyStations(stations, supplierStations, receiverStations, warperId, maxWarperCount);
+                IdentifyStations(allStations, supplierStations, receiverStations, warperId, maxWarperCount);
 
                 // Transfer warpers from suppliers to receivers
                 foreach (var receiver in receiverStations)
                 {
-                    Debug.Log($"Transferring warpers to receiver station {receiver.id}.");
-                    TransferWarpersToReceiver(__instance, receiver, supplierStations, warperId, maxWarperCount);
+                    TransferWarpersToReceiver(receiver, supplierStations, warperId, maxWarperCount);
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Error during GameTick Postfix: {ex.Message}");
+                Debug.LogError($"[DistributeSpaceWarper] Error during GalacticTransport GameTick: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
-        private static List<StationComponent> CollectStations(PlanetTransport planetTransport, int warperId)
-        {
-            List<StationComponent> stations = new List<StationComponent>(planetTransport.stationCursor);
-
-            // Collect stations from PlanetTransport
-            StationComponent[] stationPool = planetTransport.stationPool;
-            for (int j = 1; j < planetTransport.stationCursor; j++)
-            {
-                StationComponent station = stationPool[j];
-                if (station != null && station.id == j && !station.isCollector &&
-                    (station.isStellar || (RemoteTransfer && IsRemoteWarperSupplier(station, warperId)) ||
-                     station.storage.Any(s => s.itemId == warperId && (s.localLogic == ELogisticStorage.Supply || s.remoteLogic == ELogisticStorage.Supply))))
-                {
-                    stations.Add(station);
-                }
-            }
-
-            // Collect stations from GalacticTransport if RemoteTransfer is enabled
-            if (RemoteTransfer)
-            {
-                GalacticTransport galacticTransport = UIRoot.instance.uiGame.gameData.galacticTransport;
-
-                //GalacticTransport galacticTransport = planetTransport.gameData.galacticTransport;
-                foreach (StationComponent station in galacticTransport.stationPool)
-                {
-                    if (station != null && !station.isCollector && station.isStellar &&
-                        station.storage.Any(s => s.itemId == warperId && s.remoteLogic == ELogisticStorage.Supply))
-                    {
-                        stations.Add(station);
-                    }
-                }
-            }
-
-            return stations;
-        }
 
         private static void IdentifyStations(List<StationComponent> stations, List<StationComponent> supplierStations, List<StationComponent> receiverStations, int warperId, int maxWarperCount)
         {
@@ -141,7 +147,7 @@ namespace DistributeSpaceWarper
             return needsWarpers;
         }
 
-        private static void TransferWarpersToReceiver(PlanetTransport planetTransport, StationComponent receiver, List<StationComponent> suppliers, int warperId, int maxWarperCount)
+        private static void TransferWarpersToReceiver(StationComponent receiver, List<StationComponent> suppliers, int warperId, int maxWarperCount)
         {
             int neededWarperCount = maxWarperCount - receiver.warperCount;
             Debug.Log($"Receiver station {receiver.id} needs {neededWarperCount} warpers.");
@@ -184,7 +190,7 @@ namespace DistributeSpaceWarper
                 receiver.warperCount += transferAmount;
                 Debug.Log($"Added {transferAmount} warpers to receiver station {receiver.id} (new count: {receiver.warperCount}).");
 
-                UpdateTraffic(planetTransport, receiver);
+                UpdateTraffic(receiver);
 
                 neededWarperCount -= transferAmount;
 
@@ -201,12 +207,34 @@ namespace DistributeSpaceWarper
             return WarperTransportCost ? (supplier.planetId == receiver.planetId ? WarperLocalTransportCost : WarperRemoteTransportCost) : 0;
         }
 
-        private static void UpdateTraffic(PlanetTransport planetTransport, StationComponent receiver)
+        private static void UpdateTraffic(StationComponent receiver)
         {
             receiver.UpdateNeeds();
-            planetTransport.RefreshStationTraffic();
-            planetTransport.RefreshDispenserTraffic();
-            planetTransport.gameData.galacticTransport.RefreshTraffic(receiver.gid);
+
+            // Get the planet transport from GameMain
+            if (GameMain.data == null)
+                return;
+
+            PlanetData planet = GameMain.data.galaxy?.PlanetById(receiver.planetId);
+            if (planet?.factory?.transport != null)
+            {
+                // These methods might have been removed in 0.10.33, wrap in try-catch
+                try
+                {
+                    planet.factory.transport.RefreshStationTraffic();
+                    planet.factory.transport.RefreshDispenserTraffic();
+                }
+                catch (Exception)
+                {
+                    // Methods don't exist in this version, skip
+                }
+            }
+
+            // Refresh galactic traffic
+            if (GameMain.data.galacticTransport != null)
+            {
+                GameMain.data.galacticTransport.RefreshTraffic(receiver.gid);
+            }
         }
     }
 }
