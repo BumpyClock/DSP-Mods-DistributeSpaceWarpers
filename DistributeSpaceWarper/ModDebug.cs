@@ -5,29 +5,39 @@ using System.Text;
 
 namespace DistributeSpaceWarper
 {
-    public static class ModDebug
+/// <summary>
+/// Small helper for logging and a few debug utilities.
+/// Wraps BepInEx logger and keeps TRACE logs behind a symbol.
+/// </summary>
+public static class ModDebug
     {
+        /// <summary>Logger instance provided by the plugin at startup.</summary>
         private static ManualLogSource Logger { get; set; }
 
+        /// <summary>Sets the logger instance used by this utility.</summary>
         public static void SetLogger(ManualLogSource logger)
         {
             Logger = logger;
         }
 
+        /// <summary>Asserts a condition using Unity's assertion utility.</summary>
         public static void Assert(bool condition)
         {
             UnityEngine.Assertions.Assert.IsTrue(condition);
         }
 
+        /// <summary>Logs an info-level message.</summary>
         public static void Log(object message)
         {
             Logger.Log(LogLevel.Info, message);
         }
+        /// <summary>Logs an error-level message.</summary>
         public static void Error(object message)
         {
             Logger.Log(LogLevel.Error, message);
         }
 
+        /// <summary>Logs a trace-only message when compiled with TRACE defined.</summary>
         public static void Trace(object message)
         {
 #if TRACE
@@ -35,6 +45,7 @@ namespace DistributeSpaceWarper
 #endif
         }
 
+        /// <summary>Logs human-readable planet type for a given planet.</summary>
         public static void LogPlanetType(PlanetData planet)
         {
             //Gas planet range
@@ -61,6 +72,7 @@ namespace DistributeSpaceWarper
             };
         }
 
+        /// <summary>Logs current build command mode from an integer code.</summary>
         public static void LogCmdMode(int mode)
         {
             //Gas planet range

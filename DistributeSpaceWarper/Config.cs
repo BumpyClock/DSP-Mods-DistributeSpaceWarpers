@@ -1,12 +1,20 @@
+﻿// Configuration bindings for Distribute Space Warper
+// Groups settings into General, Utility, and Advanced sections.
 ﻿namespace DistributeSpaceWarper
 {
     using BepInEx.Configuration;
 
+    /// <summary>
+    /// Central configuration holder. Bind once in Plugin.Awake and access via static fields.
+    /// </summary>
     public static class Config
     {
         private static readonly string GENERAL_SECTION = "General";
         private static readonly string UTILITY_SECTION = "Utility";
 
+        /// <summary>
+        /// General gameplay and cadence settings.
+        /// </summary>
         public static class General
         {
             public static ConfigEntry<bool> WarperRemoteMode;
@@ -16,12 +24,30 @@
             public static ConfigEntry<int> WarperLocalTransportCost;
             public static ConfigEntry<bool> WarpersRequiredToggleAutomation;
         }
-        
+
+        /// <summary>
+        /// Utility toggles for disabling/uninstalling the mod safely.
+        /// </summary>
         public static class Utility
         {
             public static ConfigEntry<bool> DisableMod;
             public static ConfigEntry<bool> UninstallMod;
         }
+        /// <summary>
+        /// Advanced behavior controls for fairness, throughput, and reserves.
+        /// </summary>
+        public static class Advanced
+        {
+            public static ConfigEntry<int> WarperTarget;
+            public static ConfigEntry<int> MaxPerTickPerReceiver;
+            public static ConfigEntry<int> SupplierReserve;
+            public static ConfigEntry<bool> FairShareDistribution;
+            public static ConfigEntry<bool> AdaptiveCadence;
+        }
+
+        /// <summary>
+        /// Binds all configuration entries. Call once on plugin startup.
+        /// </summary>
         internal static void Init(ConfigFile config)
         {
             ////////////////////
@@ -29,8 +55,8 @@
             ////////////////////
             
             General.WarperTickCount = config.Bind(GENERAL_SECTION, "WarperTickCount", 60,
-                new ConfigDescription("Default number of ticks before distributing warpers. Note: Maximum of 260, defaults to 60",
-                    new AcceptableValueRange<int>(0, 275), new { }));
+                new ConfigDescription("Number of game ticks between distribution passes. Min 1, Max 275 (defaults to 60)",
+                    new AcceptableValueRange<int>(1, 275), new { }));
 
             General.WarperRemoteMode = config.Bind(GENERAL_SECTION, "WarperRemoteMode", false,
                 "By default only search local ILS/PLS for supplies. Enable this to get Warpers from different planets as well"
@@ -69,6 +95,25 @@
                 "Step #3: Save your game. " +
                 "Step #4: Exit the game and remove this mod."
                 );
+
+            ////////////////////////
+            // Advanced Behavior  //
+            ////////////////////////
+
+            Advanced.WarperTarget = config.Bind(GENERAL_SECTION, "WarperTarget", 50,
+                new ConfigDescription("Target warpers per station (typically 50)", new AcceptableValueRange<int>(1, 50), new { }));
+
+            Advanced.MaxPerTickPerReceiver = config.Bind(GENERAL_SECTION, "MaxPerTickPerReceiver", 10,
+                new ConfigDescription("Cap warpers delivered to a single receiver per run (0 = unlimited)", new AcceptableValueRange<int>(0, 50), new { }));
+
+            Advanced.SupplierReserve = config.Bind(GENERAL_SECTION, "SupplierReserve", 0,
+                new ConfigDescription("Minimum warpers to keep in each supplier (0-50)", new AcceptableValueRange<int>(0, 50), new { }));
+
+            Advanced.FairShareDistribution = config.Bind(GENERAL_SECTION, "FairShareDistribution", true,
+                new ConfigDescription("If true, allocate supply proportionally to receiver deficits", null, new { }));
+
+            Advanced.AdaptiveCadence = config.Bind(GENERAL_SECTION, "AdaptiveCadence", false,
+                new ConfigDescription("If true, speed up when deficits exist and slow down when stable", null, new { }));
         }
     }
 }
