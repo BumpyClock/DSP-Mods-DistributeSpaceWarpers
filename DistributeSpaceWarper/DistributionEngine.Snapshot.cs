@@ -27,6 +27,8 @@ namespace DistributeSpaceWarper
             var factories = gt.gameData.factories;
             if (factories == null) return;
 
+            bool respectWarperToggle = Config.General.WarpersRequiredToggleAutomation.Value;
+
             for (int f = 0; f < factories.Length; f++)
             {
                 var factory = factories[f];
@@ -43,7 +45,8 @@ namespace DistributeSpaceWarper
                     if (IsSupplier(st, warperId, remoteTransfer))
                         _suppliers.Add(st);
 
-                    if (st.warperNecessary && st.warperCount < targetPerStation)
+                    bool requiresWarper = !respectWarperToggle || st.warperNecessary;
+                    if (requiresWarper && st.warperCount < targetPerStation)
                         _receivers.Add(st);
                 }
             }
