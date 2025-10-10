@@ -38,3 +38,20 @@ I'm not responsible for borking your saved game. Use at your own risk.
 **Build**
 - Build with Visual Studio or `dotnet build DSP-Mods.sln -c Release`.
 - Output is `Release/DistributeSpaceWarper.dll` for packing.
+
+**Contributing**
+- Keep hot paths allocation‑free:
+  - No LINQ in per‑tick logic. Prefer indexed `for` loops and reusable buffers.
+  - Avoid closures and `ToList()` in the engine; profile before adding abstractions.
+- Maintain engine structure:
+  - Distribution logic lives in `DistributionEngine` partials (Core/Snapshot/Plan/Execute/Refresh).
+  - `Patch.cs` remains a thin scheduler only.
+- Traffic updates:
+  - Batch `UpdateNeeds` and `Refresh*Traffic` calls; dedupe by planet/gid.
+- Config changes:
+  - Add new keys under `Config.Advanced` or `Config.General`, document defaults/ranges, and update README.
+  - Keep sensible defaults; avoid breaking behavior for existing users.
+- Logging:
+  - Use `ModDebug.Log/Error/Trace`; default to quiet logs unless troubleshooting.
+- Style:
+  - Prefer explicit names, minimal visibility, and small, focused methods.

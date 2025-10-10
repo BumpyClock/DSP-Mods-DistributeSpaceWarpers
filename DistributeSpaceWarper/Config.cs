@@ -17,11 +17,40 @@
         /// </summary>
         public static class General
         {
+            /// <summary>
+            /// Enables sourcing warpers from remote (cross‑planet) suppliers.
+            /// </summary>
+            /// <value>Default: false.</value>
             public static ConfigEntry<bool> WarperRemoteMode;
+
+            /// <summary>
+            /// If enabled, transporting warpers consumes warpers according to the cost settings.
+            /// </summary>
+            /// <value>Default: true.</value>
             public static ConfigEntry<bool> WarperTransportCost;
+
+            /// <summary>
+            /// Cost in warpers per remote (cross‑planet) transfer when transport cost is enabled.
+            /// </summary>
+            /// <value>Default: 2. Range: 0–10.</value>
             public static ConfigEntry<int> WarperRemoteTransportCost;
+
+            /// <summary>
+            /// Number of game ticks between distribution runs.
+            /// </summary>
+            /// <value>Default: 60. Range: 1–275.</value>
             public static ConfigEntry<int> WarperTickCount;
+
+            /// <summary>
+            /// Cost in warpers per local (same‑planet) transfer when transport cost is enabled.
+            /// </summary>
+            /// <value>Default: 1. Range: 0–10.</value>
             public static ConfigEntry<int> WarperLocalTransportCost;
+
+            /// <summary>
+            /// When the in‑game "Warpers Required" toggle is on, auto‑fills the warper slot; stops when off.
+            /// </summary>
+            /// <value>Default: true.</value>
             public static ConfigEntry<bool> WarpersRequiredToggleAutomation;
         }
 
@@ -30,7 +59,16 @@
         /// </summary>
         public static class Utility
         {
+            /// <summary>
+            /// Disables all mod effects without removing extra slots; useful for troubleshooting.
+            /// </summary>
+            /// <value>Default: false.</value>
             public static ConfigEntry<bool> DisableMod;
+
+            /// <summary>
+            /// Runs the uninstall flow to remove extra slots from all ILS. BACK UP YOUR SAVE FIRST.
+            /// </summary>
+            /// <value>Default: false.</value>
             public static ConfigEntry<bool> UninstallMod;
         }
         /// <summary>
@@ -38,10 +76,34 @@
         /// </summary>
         public static class Advanced
         {
+            /// <summary>
+            /// Target number of warpers to hold at each receiver station.
+            /// </summary>
+            /// <value>Default: 50. Range: 1–50.</value>
             public static ConfigEntry<int> WarperTarget;
+
+            /// <summary>
+            /// Maximum number of warpers delivered to a single receiver per run (0 = unlimited).
+            /// </summary>
+            /// <value>Default: 10. Range: 0–50.</value>
             public static ConfigEntry<int> MaxPerTickPerReceiver;
+
+            /// <summary>
+            /// Minimum number of warpers to keep in each supplier (prevents total drain).
+            /// </summary>
+            /// <value>Default: 0. Range: 0–50.</value>
             public static ConfigEntry<int> SupplierReserve;
+
+            /// <summary>
+            /// Allocate supply proportionally to receiver deficits for strict fairness each run.
+            /// </summary>
+            /// <value>Default: true.</value>
             public static ConfigEntry<bool> FairShareDistribution;
+
+            /// <summary>
+            /// If enabled, uses a faster cadence when deficits exist and backs off when stable.
+            /// </summary>
+            /// <value>Default: false.</value>
             public static ConfigEntry<bool> AdaptiveCadence;
         }
 
